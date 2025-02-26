@@ -19,8 +19,9 @@ import { api } from "@/convex/_generated/api";
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
+import { toast } from "sonner";
 
-export default function UploadPdfDialog({ children }) {
+export default function UploadPdfDialog({ children,isMaxFile}) {
   const generateUploadUrl = useMutation(api.fileStorage.generateUploadUrl);
   const addFileEntry = useMutation(api.fileStorage.AddFileEntryToDB);
   const getFileUrl = useMutation(api.fileStorage.getFileUrl);
@@ -68,7 +69,7 @@ export default function UploadPdfDialog({ children }) {
   
       if (!fileUrl) throw new Error("Failed to retrieve file URL");
   
-      const createdBy = user?.id || "anonymous";
+      const createdBy = user?.primaryEmailAddress?.emailAddress || "anonymous";
   
       const resp = await addFileEntry({
         fileId,
@@ -95,10 +96,12 @@ export default function UploadPdfDialog({ children }) {
     } catch (error) {
       console.error("Upload or embedding failed:", error); // Log the error details
       setError(`Failed to upload or process file: ${error.message}`); // Set error message with detail
-    } finally {
-      setLoading(false);
-      setOpen(false);
     }
+
+    setLoading(false);
+    setOpen(false);
+    toast("file is Ready !")
+    
   };
   
   return (
@@ -106,7 +109,8 @@ export default function UploadPdfDialog({ children }) {
       <DialogTrigger asChild>
         <Button
         className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300"
-        onClick={() => setOpen(true)}>
+        onClick={() => setOpen(true)} 
+        disabled={isMaxFile}>
            Upload PDF File
         </Button>
       </DialogTrigger>

@@ -36,7 +36,7 @@ export const getFileUrl = mutation({
 });
 
 
-export const GetFileRecord = query({
+export const GetFileRecord=query({
   args: {
     fileId: v.string(),
   },
@@ -46,8 +46,23 @@ export const GetFileRecord = query({
       .filter((q) => q.eq(q.field("fileId"), args.fileId)) // ✅ Correct usage
       .unique();
 
-    console.log("Query result:", res);
     return res;
   },
 });
+
+
+export const GetUserFiles = query({
+    args: { userEmail:v.optional (v.string()) }, // Changed from createdBy to userEmail
+    handler: async (ctx, args) => {
+        if(!args?.userEmail){
+            return ;
+        }
+        const userFiles = await ctx.db.query("pdfFiles")
+            .filter((q) => q.eq(q.field("createdBy"), args.userEmail))
+            .collect();
+        
+        return userFiles;
+    }
+});
+
 

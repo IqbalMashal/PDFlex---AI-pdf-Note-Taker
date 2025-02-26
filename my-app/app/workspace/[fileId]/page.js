@@ -14,21 +14,27 @@ export default function Workspace() {
         fileId: fileId
     });
 
-    useEffect(() => {
-        console.log("this is fileId: ", fileId);
-    }, [fileId]); // Changed to depend on fileId
+    // Reference to the TextEditor instance
+    let textEditorRef = null;
+
+    // Function to save notes
+    const handleSave = () => {
+        if (textEditorRef) {
+            textEditorRef.saveNotes();
+        }
+    };
 
     return (
         <div>
-            <WorkspaceHeader /> 
+            {/* Pass handleSave to the header */}
+            <WorkspaceHeader fileName={fileInfo?.fileName} onSave={handleSave} /> 
 
-            <div className='grid grid-cols-2 gap-5'>
+            <div className="grid grid-cols-2 gap-5">
                 <div>
-                    {/* You can add additional content or components here if needed */}
-                    <TextEditor />
+                    {/* Pass the reference to TextEditor */}
+                    <TextEditor fileId={fileId} ref={(ref) => (textEditorRef = ref)} />
                 </div>
                 <div>
-                    {/* Pass the fileUrl to the PdfViewer component */}
                     <PdfViewer fileUrl={fileInfo?.fileUrl} />
                 </div>
             </div>
