@@ -19,15 +19,15 @@ PDFlex is an AI-powered tool that extracts data from PDF files and allows users 
 ## Tech Stack
 
 - **Frontend:** Next.js, React, Tailwind CSS  
-- **Backend:** LangChain, Convex  
+- **Backend:** LangChain, Convex 
 - **AI Integration:** Google Generative AI, LangChain  
 - **Authentication:** Clerk  
-- **Styling & UI:** Radix UI, Tiptap, Lucide Icons  
+- **Styling & UI:** Shadcn, Radix UI, Tiptap, Lucide Icons  
 
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/pdflex.git  
+git clone [https://github.com/yourusername/pdflex.git](https://github.com/IqbalMashal/PDFlex---AI-pdf-Note-Taker.git)  
 cd pdflex  
 npm install  
 npm run dev  
@@ -48,8 +48,4 @@ Contributions are welcome! Feel free to open an issue or submit a pull request.
 This project is licensed under the MIT License.
 
 ---
-
-### Connect with Me
-
-[GitHub](https://github.com/yourusername) | [LinkedIn](https://linkedin.com/in/yourprofile)
 
