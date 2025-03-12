@@ -21,20 +21,28 @@ import { useUser } from "@clerk/nextjs";
 import axios from "axios";
 import { toast } from "sonner";
 
-export default function UploadPdfDialog({ children,isMaxFile}) {
+export default function UploadPdfDialog({ children, isMaxFile }) {
   const generateUploadUrl = useMutation(api.fileStorage.generateUploadUrl);
   const addFileEntry = useMutation(api.fileStorage.AddFileEntryToDB);
   const getFileUrl = useMutation(api.fileStorage.getFileUrl);
   const embeddDocument = useAction(api.myAction.ingest);
   const { user } = useUser();
+
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState("");
-  const [error, setError] = useState(""); // State to handle error messages
-  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [open, setOpen] = useState(false);
 
   const onFileSelect = (event) => {
-    setFile(event.target.files[0]);
+    const selectedFile = event.target.files[0];
+    if (selectedFile && selectedFile.type === "application/pdf") {
+      setFile(selectedFile);
+      setError(""); // Clear error on valid file selection
+    } else {
+      setError("Please select a valid PDF file.");
+      setFile(null); // Reset file state
+    }
   };
 
   const onUpload = async () => {
@@ -42,76 +50,73 @@ export default function UploadPdfDialog({ children,isMaxFile}) {
       setError("Please select a PDF file to upload.");
       return;
     }
-  
+
     setLoading(true);
-    setError(""); // Clear previous errors
+    setError("");
+
     try {
+      // Step 1: Generate upload URL
       const postUrl = await generateUploadUrl();
-      console.log("Upload URL:", postUrl); // Log the upload URL
-  
-      const result = await fetch(postUrl, {
+      console.log("Upload URL:", postUrl);
+
+      // Step 2: Upload file to storage
+      const uploadResponse = await fetch(postUrl, {
         method: "POST",
-        headers: { "Content-Type": file?.type },
+        headers: { "Content-Type": file.type },
         body: file,
       });
-  
-      console.log("Fetch response status:", result.status); // Log the response status
-  
-      if (!result.ok) throw new Error("Upload failed");
-  
-      const { storageId } = await result.json();
-      console.log("Storage ID:", storageId); // Log the storage ID
-  
-      const fileId = uuidv4();
+
+      if (!uploadResponse.ok) throw new Error("Upload failed");
+
+      const { storageId } = await uploadResponse.json();
+      console.log("Storage ID:", storageId);
+
+      // Step 3: Get file URL
       const fileUrl = await getFileUrl({ storageId });
-  
-      console.log("File URL:", fileUrl); // Log the file URL
-  
       if (!fileUrl) throw new Error("Failed to retrieve file URL");
-  
+
+      // Step 4: Add file entry to database
+      const fileId = uuidv4();
       const createdBy = user?.primaryEmailAddress?.emailAddress || "anonymous";
-  
-      const resp = await addFileEntry({
+
+      await addFileEntry({
         fileId,
         storageId,
         fileName: fileName || "Untitled file",
         fileUrl,
         createdBy,
       });
-  
-      console.log("File uploaded successfully:", resp);
-      alert("File uploaded successfully!");
-  
-      // Fetch PDF content and embed it
-      const ApiResp = await axios.get('/api/pdf-loader?pdfUrl=' + fileUrl);
-      console.log("API Response for PDF loader:", ApiResp.data.result); // Log the API response
-  
-      const embadedResult = await embeddDocument({
-        splitText: ApiResp.data.result,
-        fileId: fileId
-      });
-  
-      console.log("Embedding result:", embadedResult); // Log the embedding result
-  
-    } catch (error) {
-      console.error("Upload or embedding failed:", error); // Log the error details
-      setError(`Failed to upload or process file: ${error.message}`); // Set error message with detail
-    }
 
-    setLoading(false);
-    setOpen(false);
-    toast("file is Ready !")
-    
+      // Step 5: Fetch PDF content and embed it
+      const pdfLoaderResponse = await axios.get("/api/pdf-loader?pdfUrl=" + fileUrl);
+      console.log("PDF Loader Response:", pdfLoaderResponse.data.result);
+
+      await embeddDocument({
+        splitText: pdfLoaderResponse.data.result,
+        fileId: fileId,
+      });
+
+      // Success
+      toast.success("File uploaded and processed successfully!");
+      setOpen(false); // Close the dialog
+    } catch (error) {
+      console.error("Upload or processing failed:", error);
+      setError(`Failed to upload or process file: ${error.message}`);
+      toast.error("Failed to upload or process file.");
+    } finally {
+      setLoading(false);
+    }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
-        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300"
-        onClick={() => setOpen(true)} 
-        disabled={isMaxFile}>
-           Upload PDF File
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300"
+          onClick={() => setOpen(true)}
+          disabled={isMaxFile}
+        >
+          Upload PDF File
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -125,7 +130,7 @@ export default function UploadPdfDialog({ children,isMaxFile}) {
         {/* File Upload Section */}
         <div className="space-y-4">
           <div>
-            <h2 className="text-sm font-medium text-gray-700">Select a File:</h2>
+            <label className="text-sm font-medium text-gray-700">Select a File:</label>
             <input
               type="file"
               accept="application/pdf"
@@ -156,12 +161,13 @@ export default function UploadPdfDialog({ children,isMaxFile}) {
           </DialogClose>
           <Button
             className="bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2"
-            onClick={onUpload} disabled={loading}>
+            onClick={onUpload}
+            disabled={loading}
+          >
             {loading ? <Loader2 className="animate-spin" size={18} /> : "Upload"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-
   );
 }

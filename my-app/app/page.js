@@ -67,7 +67,9 @@ export default function Home() {
             transition={{ delay: 0.4 }}
             className="text-xl text-blue-200/90 mb-12 max-w-2xl mx-auto leading-relaxed"
           >
-            Elevate your productivity with our intelligent dashboard. Seamlessly manage your projects, teams, and analytics in one place.
+            Transform note-taking with <span className="font-semibold text-blue-300">PDFlex</span>. 
+            Use AI to extract, organize, and summarize ideas effortlessly. 
+            Turn documents into insights—fast, smart, and seamless.
           </motion.p>
 
           <motion.div 
