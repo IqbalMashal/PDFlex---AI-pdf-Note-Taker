@@ -1,38 +1,29 @@
 import { ConvexVectorStore } from "@langchain/community/vectorstores/convex";
-import { action } from "./_generated/server.js";
+import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
+import { TaskType } from "@google/generative-ai"; // Add missing import
 
 export const ingest = action({
   args: {
-    splitText: v.any(),
+    splitText: v.array(v.string()), // Fixed schema
     fileId: v.string(),
   },
   handler: async (ctx, args) => {
     try {
       const embeddingOptions = {
-        apiKey: process.env.GOOGLE_API_KEY,
+        apiKey: ctx.env.GOOGLE_API_KEY, // Works in dev and prod
         model: "text-embedding-004",
-        taskType: "RETRIEVAL_DOCUMENT", // Direct string value
+        taskType: TaskType.RETRIEVAL_DOCUMENT, // Use enum
         title: "Document title",
       };
 
-
-      console.log("Before storing embeddings...");
       await ConvexVectorStore.fromTexts(
         args.splitText,
-        { id: args.fileId },
+        { fileId: args.fileId }, // Use consistent metadata key
         new GoogleGenerativeAIEmbeddings(embeddingOptions),
         { ctx }
       );
-
-      console.log("Stored text chunks:", args.splitText);
-      console.log("Embedding metadata:", { fileId: args.fileId });
-
-
-      console.log("After storing embeddings..."); // If this doesn't print, there's an issue in `fromTexts()`
-      
-
 
       return "Completed";
     } catch (error) {
