@@ -12,7 +12,7 @@ export const ingest = action({
   handler: async (ctx, args) => {
     try {
       const embeddingOptions = {
-        apiKey: ctx.env.GOOGLE_API_KEY, // Works in dev and prod
+        apiKey: process.env.GOOGLE_API_KEY, // Works in dev and prod
         model: "text-embedding-004",
         taskType: TaskType.RETRIEVAL_DOCUMENT, // Use enum
         title: "Document title",
