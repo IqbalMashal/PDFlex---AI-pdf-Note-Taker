@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Layout, Shield } from "lucide-react";
@@ -13,26 +13,36 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 export default function SideBar() {
-  const { user } = useUser();
+  const { isLoaded, user } = useUser();
   const path = usePathname();
-  const [fileCount, setFileCount] = useState(0);
 
-  const fileList = useQuery(api.fileStorage.GetUserFiles, {
-    userEmail: user?.primaryEmailAddress?.emailAddress,
-  });
+  // Only run query if user is loaded and has an email
+  const fileList = useQuery(
+    api.fileStorage.GetUserFiles,
+    isLoaded && user?.primaryEmailAddress?.emailAddress
+      ? { userEmail: user.primaryEmailAddress.emailAddress }
+      : "skip"
+  );
 
-  useEffect(() => {
-    if (fileList) {
-      setFileCount(fileList.length || 0);
-    }
-  }, [fileList]);
+  const fileCount = fileList?.length || 0;
+
+
+  if (!isLoaded) {
+    return (
+      <div className="shadow-lg h-screen bg-white text-blue-900 flex items-center justify-center">
+        <p className="text-blue-700 font-medium">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="shadow-lg h-screen bg-white text-blue-900 flex flex-col items-center p-5 border-r border-blue-200 relative">
       {/* Logo */}
-      <div className="mb-8">
-        <Image src="/logo.png" alt="Logo" width={170} height={120} priority />
-      </div>
+      <Link href={"/"}>
+        <div className="mb-8 cursor-pointer">
+          <Image src="/logo.png" alt="Logo" width={170} height={120} priority />
+        </div>
+      </Link>
 
       {/* Upload PDF Button */}
       <UploadPdfDialog isMaxFile={fileCount >= 5}>
@@ -43,8 +53,18 @@ export default function SideBar() {
 
       {/* Menu Items */}
       <nav className="w-full mt-8 space-y-3">
-        <SidebarLink href="/dashboard" icon={<Layout className="text-blue-600" />} label="Workspace" active={path === "/dashboard"} />
-        <SidebarLink href="/dashboard/upgrade" icon={<Shield className="text-blue-600" />} label="Upgrade" active={path === "/dashboard/upgrade"} />
+        <SidebarLink
+          href="/dashboard"
+          icon={<Layout className="text-blue-600" />}
+          label="Workspace"
+          active={path === "/dashboard"}
+        />
+        <SidebarLink
+          href="/dashboard/upgrade"
+          icon={<Shield className="text-blue-600" />}
+          label="Upgrade"
+          active={path === "/dashboard/upgrade"}
+        />
       </nav>
 
       {/* Storage Progress */}
@@ -53,7 +73,9 @@ export default function SideBar() {
         <p className="text-sm mt-2 font-medium text-blue-800">
           {fileCount} out of 5 PDFs Uploaded
         </p>
-        <p className="text-xs text-blue-600 mt-2">Upgrade to upload more PDFs</p>
+        <p className="text-xs text-blue-600 mt-2">
+          Upgrade to upload more PDFs
+        </p>
       </div>
     </div>
   );
